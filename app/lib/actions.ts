@@ -69,13 +69,27 @@ export async function createInvoice(prevState: State, formData: FormData) {
 
 const UpdateInvoice = FormSchema.omit({ id: true, date: true });
 
-export async function updateInvoice(id: string, formData: FormData) {
-  const { customerId, amount, status } = UpdateInvoice.parse({
+export async function updateInvoice(
+  prevState: State,
+  id: string,
+  formData: FormData
+) {
+  // validate form using zod
+  const validateFields = UpdateInvoice.safeParse({
     customerId: formData.get("customerId"),
     amount: formData.get("amount"),
     status: formData.get("status"),
   });
 
+  // if validation fails return return errors early
+  if (!validateFields.success) {
+    return {
+      errors: validateFields.error.flatten().fieldErrors,
+      message: "Missing Fields. Failed to Update Invoice",
+    };
+  }
+  // prepare date for update
+  const { customerId, amount, status } = validateFields.data;
   const amountInCents = amount * 100;
 
   try {
